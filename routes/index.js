@@ -4,40 +4,69 @@ var models = require('../models');
 var Page = models.Page;
 var User = models.User;
 
-// var generateUrlTitle = function (title) {
-//     if (title) {
-//         // Removes all non-alphanumeric characters from title
-//         // And make whitespace underscore
-//         return title.replace(/\s+/g, '_').replace(/\W/g, '');
-//     } else {
-//         // Generates random 5 letter string
-//         return Math.random().toString(36).substring(2, 7);
-//     }
-// }
-
 router.get('/add', function (req, res, next) {
     res.render('addpage')
 })
+
+router.get('/users/:id', function(req, res, next) {
+  User.findOne({
+    where: {
+        id: req.params.id
+    }
+  }).then(function(users){
+      console.log(users)
+    res.render('users', { users: users });
+  }).catch(next);
+});
+
+router.get('/users', function(req, res, next) {
+  User.findAll({}).then(function(users){
+    res.render('users', { users: users });
+  }).catch(next);
+});
+
+router.get('/:urlTitle', function (req, res, next) {
+    Page.findOne({
+        where: {
+            urlTitle: req.params.urlTitle
+        },
+        include: [{ all: true }]
+    })
+        .then(function (foundPage) {
+            res.render('wikipage', foundPage.dataValues)
+        })
+        .catch(next);
+})
+
 router.get('/', function (req, res, next) {
-    res.render('index')
+    Page.findAll({})
+        .then(function (allPages) {
+            res.render('index', { pages: allPages })
+        })
+        .catch(next);
 })
 router.post('/', function (req, res, next) {
     var page = Page.build({
         title: req.body.title,
         status: req.body.status,
         content: req.body.content
-        // urlTitle: generateUrlTitle(req.body.title)
     });
-    var user = User.build({
-        name: req.body.author,
-        email: req.body.email
+    var user = User.findOrCreate({
+        where: {
+            name: req.body.author,
+            email: req.body.email
+        }
     })
-    page.save()
-    .then(function(){
-        res.json(page)
-    })
-    user.save()
-    // res.redirect('/wiki')
+        .then(function (user) {
+            return page.save()
+            .then(function (savedPage) {
+                return savedPage.setAuthor(user[0])
+            })
+        })
+        .then(function(page){
+            res.redirect(page.fullUrl)
+        })
+        .catch(next);
 })
 
 module.exports = router;

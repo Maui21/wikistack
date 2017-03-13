@@ -12,11 +12,9 @@ var Page = db.define('page', {
   status: { type: Sequelize.ENUM('open', 'closed') }
   // date: { type: Sequelize.DATE, defaultValue: Sequelize.NOW }
 },
-  //getterMethod: {fullRoute: function(){ return '/wiki/' + this.urlTitle}}
   {
     hooks: {
       beforeValidate: function generateUrlTitle (page) {
-        console.log("meow",page.title, page.urlTitle, page)
         if (page.title) {
           // Removes all non-alphanumeric characters from title
           // And make whitespace underscore
@@ -28,12 +26,11 @@ var Page = db.define('page', {
       }
     },
     getterMethods: {
-      fullUrl: function () { return '/wiki/' + this.urlTitle },
-
+      fullUrl: function () { return '/wiki/' + this.getDataValue('urlTitle') }
     }
   }
 )
-
+Page.belongsTo(User, {as: 'author'})
 module.exports = {
   Page: Page,
   User: User
