@@ -3,16 +3,14 @@ const app = express();
 const bodyParser = require('body-parser');
 //const morgan = require('morgan');
 const nunjucks = require('nunjucks')
-const router = require('./routes/index.js')
+const wikiRouter = require('./routes/index.js')
 const models = require('./models');
 
 //app.use(morgan('combined'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
-app.use('/', router)
-
-
+app.use('/wiki', wikiRouter)
 
 var env = nunjucks.configure('views', {noCache: true}); // have res.render work with html files
 app.set('view engine', 'html');                         // when res.render works with html files, have it use nunjucks to do so

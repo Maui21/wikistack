@@ -1,19 +1,40 @@
 var Sequelize = require('sequelize');
-var db = new Sequelize('postgres://localhost:5432/wikistack');
+var db = new Sequelize('postgres://localhost:5432/wikistack', { logging: false });
 
 var User = db.define('user', {
-  name: Sequelize.STRING,
-  email: Sequelize.STRING
+  name: { type: Sequelize.STRING, allowNull: false },
+  email: { type: Sequelize.STRING, allowNull: false, validate: { isEmail: true } }
 })
-
 var Page = db.define('page', {
-  title: Sequelize.STRING,
-  urlTitle: Sequelize.STRING,
-  content: Sequelize.TEXT,
-  status: Sequelize.ENUM('open', 'closed')
-})
+  title: { type: Sequelize.STRING, allowNull: false },
+  urlTitle: { type: Sequelize.STRING, allowNull: false },
+  content: { type: Sequelize.TEXT, allowNull: false },
+  status: { type: Sequelize.ENUM('open', 'closed') }
+  // date: { type: Sequelize.DATE, defaultValue: Sequelize.NOW }
+},
+  //getterMethod: {fullRoute: function(){ return '/wiki/' + this.urlTitle}}
+  {
+    hooks: {
+      beforeValidate: function generateUrlTitle (page) {
+        console.log("meow",page.title, page.urlTitle, page)
+        if (page.title) {
+          // Removes all non-alphanumeric characters from title
+          // And make whitespace underscore
+          page.urlTitle = page.title.replace(/\s+/g, '_').replace(/\W/g, '');
+        } else {
+          // Generates random 5 letter string
+          page.urlTitle = Math.random().toString(36).substring(2, 7);
+        }
+      }
+    },
+    getterMethods: {
+      fullUrl: function () { return '/wiki/' + this.urlTitle },
+
+    }
+  }
+)
 
 module.exports = {
-    Page : Page,
-    User : User
+  Page: Page,
+  User: User
 }
